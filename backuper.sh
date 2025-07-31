@@ -328,8 +328,8 @@ add_directories() {
     # Check if base directory exists
     [[ ! -d "$base_dir" ]] && { warn "Directory not found: $base_dir"; return; }
 
-    # Find directories and filter based on exclude patterns
-    mapfile -t items < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d \( -name "*mysql*" -prune -o -name "*mariadb*" -prune \) -o -print)
+    # Find directories and files, but exclude mysql/mariadb directories and socket files
+    mapfile -t items < <(find "$base_dir" -mindepth 1 -maxdepth 1 \( -name "*mysql*" -prune -o -name "*mariadb*" -prune -o -name "*.socket" -prune \) -o -print)
 
     for item in "${items[@]}"; do
         local exclude_item=false
@@ -341,6 +341,11 @@ add_directories() {
                 break
             fi
         done
+
+        # Skip socket files
+        if [[ "$item" == *.socket ]]; then
+            exclude_item=true
+        fi
 
         # Add item to backup list if it doesn't match any exclude pattern
         if ! $exclude_item; then
