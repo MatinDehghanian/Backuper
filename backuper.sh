@@ -7,9 +7,6 @@ readonly BACKUP_SUFFIX="${TAG}zip"
 readonly DATABASE_SUFFIX="${TAG}sql"
 readonly LOGS_SUFFIX="${TAG}log"
 readonly VERSION="v0.4.0"
-readonly OWNER="@ErfJabs"
-readonly SPONSORTEXT="خرید سرور مجازی ایران OkaCloud با تانلینگ اختصاصی رایگان"
-readonly SPONSORLINK="https://t.me/OkaCloud"
 
 
 # ANSI color codes
@@ -145,7 +142,7 @@ menu() {
                 confirm
                 ;;
             4)
-                print "Thank you for using @ErfJabs script. Goodbye!"
+                print "Thank you for using this backup script. Goodbye!"
                 exit 0
                 ;;
             *)
@@ -179,7 +176,7 @@ start_backup() {
 generate_remark() {
     clear
     print "[REMARK]\n"
-    print "We need a remark for the backup file (e.g., Master, panel, ErfJab).\n"
+    print "We need a remark for the backup file (e.g., Master, panel, Server).\n"
 
     while true; do
         input "Enter a remark: " REMARK
@@ -386,7 +383,7 @@ holderbot_template() {
     log "Checking HolderBot configuration..."
     
     # Set default value for HOLDER_FOLDER if not set
-    local HOLDER_FOLDER="/opt/erfjab/holderbot/"
+    local HOLDER_FOLDER="/opt/holderbot/"
 
     # Check if the directory exists
     if [ ! -d "$HOLDER_FOLDER" ]; then
@@ -917,10 +914,7 @@ telegram_progress() {
 
     # Set the platform command for sending files
     PLATFORM_COMMAND="curl -s -F \"chat_id=$CHAT_ID\" -F \"document=@\$FILE\" -F \"caption=\$CAPTION\" -F \"parse_mode=HTML\" \"https://api.telegram.org/bot$BOT_TOKEN/sendDocument\""
-    CAPTION="
-📦 <b>From </b><code>\${ip}</code> [By <b><a href='https://t.me/erfjabs'>@ErfJabs</a></b>]
-<b>➖➖➖➖Sponsor➖➖➖➖</b>
-<a href='${SPONSORLINK}'>${SPONSORTEXT}</a>"
+    CAPTION="📦 <b>Backup from </b><code>\${ip}</code>"
     success "Telegram configuration completed successfully."
     LIMITSIZE=49
     sleep 1
@@ -957,7 +951,7 @@ discord_progress() {
 
     # Set the platform command for sending files
     PLATFORM_COMMAND="curl -s -F \"file=@\$FILE\" -F \"payload_json={\\\"content\\\": \\\"\$CAPTION\\\"}\" \"$DISCORD_WEBHOOK\""
-    CAPTION="📦 **From** \`${ip}\` [by **[@ErfJabs](https://t.me/erfjabs)**]\n➖➖➖➖**Sponsor**➖➖➖➖\n[${SPONSORTEXT}](${SPONSORLINK})"
+    CAPTION="📦 **Backup from** \`${ip}\`"
     LIMITSIZE=24
     success "Discord configuration completed successfully."
     sleep 1
@@ -1031,7 +1025,7 @@ set envelope_from=yes
 EOF
 
             chmod 600 ~/.muttrc
-            CAPTION="<html><body><p><b>📦 From </b><code>\${ip}</code> [by <b><a href='https://t.me/erfjabs'>@ErfJabs</a></b>]</p><p><b>➖➖➖➖Sponsor➖➖➖➖</b></p><p><a href='${SPONSORLINK}'>${SPONSORTEXT}</a></p></body></html>"
+            CAPTION="<html><body><p><b>📦 Backup from </b><code>\${ip}</code></p></body></html>"
             PLATFORM_COMMAND="echo \$CAPTION | mutt -e 'set content_type=text/html' -s 'Backuper' -a \"\$FILE\" -- \"$GMAIL_ADDRESS\""
             LIMITSIZE=24
             break
@@ -1126,7 +1120,7 @@ EOL
         success "Backup script location: $BACKUP_PATH"
         success "Cron job: Every $minutes minutes"
         success "First backup created and sent."
-        success "Thank you for using @ErfJabs backup script. Enjoy automated backups!"
+        success "Thank you for using this backup script. Enjoy automated backups!"
         exit 0
     else
         error "Failed to run backup script. Full output:"
