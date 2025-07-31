@@ -43,13 +43,11 @@
 برای نصب آخرین نسخه، دستور زیر را اجرا کنید:  
 
 ```bash  
-sudo bash -c "$(curl -sL https://github.com/erfjab/Backuper/raw/master/backuper.sh)"  
+sudo bash -c "$(curl -sL https://github.com/MatinDehghanian/Backuper/raw/master/backuper.sh)"  
 ```  
 
 ## 💙 حمایت از پروژه  
 
 اگر این پروژه برای شما مفید بوده، با دادن یک **ستاره (⭐)** از آن حمایت کنید. سپاسگزاریم!  
 
-🔹 برای دریافت جدیدترین اخبار و بروزرسانی‌ها، به [@ErfJabs](https://t.me/erfjabs) بپیوندید.  
-
-[![Stargazers over time](https://starchart.cc/erfjab/Backuper.svg?variant=adaptive)](https://starchart.cc/erfjab/Backuper)  
+[![Stargazers over time](https://starchart.cc/MatinDehghanian/Backuper.svg?variant=adaptive)](https://starchart.cc/MatinDehghanian/Backuper)  
