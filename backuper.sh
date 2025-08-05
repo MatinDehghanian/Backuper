@@ -661,6 +661,29 @@ marzban_next_template() {
             error "Invalid MySQL SQLALCHEMY_DATABASE_URL format in $env_file."
             return 1
         fi
+        
+        # Check for individual MySQL environment variables and use them if available
+        local MYSQL_ROOT_PASSWORD=$(grep -v '^#' "$env_file" | grep 'MYSQL_ROOT_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_DATABASE=$(grep -v '^#' "$env_file" | grep 'MYSQL_DATABASE' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_USER=$(grep -v '^#' "$env_file" | grep 'MYSQL_USER' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_PASSWORD=$(grep -v '^#' "$env_file" | grep 'MYSQL_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        
+        # Use individual MySQL variables if they exist, otherwise keep parsed values
+        if [[ -n "$MYSQL_DATABASE" ]]; then
+            db_name="$MYSQL_DATABASE"
+        fi
+        if [[ -n "$MYSQL_USER" ]]; then
+            db_user="$MYSQL_USER"
+        fi
+        if [[ -n "$MYSQL_PASSWORD" ]]; then
+            db_password="$MYSQL_PASSWORD"
+        fi
+        if [[ -n "$MYSQL_ROOT_PASSWORD" ]]; then
+            # If root password is available, use root user for backup
+            db_user="root"
+            db_password="$MYSQL_ROOT_PASSWORD"
+        fi
+        
         log "MySQL database detected for Marzban Next"
     else
         error "Unsupported database type in SQLALCHEMY_DATABASE_URL. Marzban Next supports sqlite+aiosqlite, postgresql+asyncpg, or mysql+asyncmy."
