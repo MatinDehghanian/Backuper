@@ -731,7 +731,7 @@ marzban_next_template() {
             return 1
         fi
         BACKUP_DB_COMMAND="PGPASSWORD='$db_password' pg_dump -h $db_host -p $db_port -U $db_user -d $db_name > $DB_PATH"
-        DIRECTORIES+=("$DB_PATH")
+        DIRECTORIES+=($DB_PATH)
     elif [[ "$db_type" == "mysql" ]]; then
         # Check if mysqldump is available
         if ! command -v mysqldump &> /dev/null; then
@@ -739,7 +739,7 @@ marzban_next_template() {
             return 1
         fi
         BACKUP_DB_COMMAND="mysqldump -h $db_host -P $db_port -u $db_user -p'$db_password' '$db_name' > $DB_PATH"
-        DIRECTORIES+=("$DB_PATH")
+        DIRECTORIES+=($DB_PATH)
     fi
 
     # Export backup variables
