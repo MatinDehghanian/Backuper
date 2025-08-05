@@ -640,6 +640,27 @@ marzban_next_template() {
             error "Invalid PostgreSQL SQLALCHEMY_DATABASE_URL format in $env_file."
             return 1
         fi
+        
+        # Check for individual PostgreSQL environment variables and use them if available
+        local DB_NAME_ENV=$(grep -v '^#' "$env_file" | grep '^DB_NAME' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_USER_ENV=$(grep -v '^#' "$env_file" | grep '^DB_USER' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_PASSWORD_ENV=$(grep -v '^#' "$env_file" | grep '^DB_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_PORT_ENV=$(grep -v '^#' "$env_file" | grep '^DB_PORT' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        
+        # Use individual PostgreSQL variables if they exist, otherwise keep parsed values
+        if [[ -n "$DB_NAME_ENV" ]]; then
+            db_name="$DB_NAME_ENV"
+        fi
+        if [[ -n "$DB_USER_ENV" ]]; then
+            db_user="$DB_USER_ENV"
+        fi
+        if [[ -n "$DB_PASSWORD_ENV" ]]; then
+            db_password="$DB_PASSWORD_ENV"
+        fi
+        if [[ -n "$DB_PORT_ENV" ]]; then
+            db_port="$DB_PORT_ENV"
+        fi
+        
         log "PostgreSQL database detected for Marzban Next"
     elif [[ "$SQLALCHEMY_DATABASE_URL" == *"mysql+asyncmy"* ]]; then
         # Parse MySQL URL: mysql+asyncmy://user:password@host:port/database
@@ -710,7 +731,7 @@ marzban_next_template() {
             return 1
         fi
         BACKUP_DB_COMMAND="PGPASSWORD='$db_password' pg_dump -h $db_host -p $db_port -U $db_user -d $db_name > $DB_PATH"
-        DIRECTORIES+=($DB_PATH)
+        DIRECTORIES+=("$DB_PATH")
     elif [[ "$db_type" == "mysql" ]]; then
         # Check if mysqldump is available
         if ! command -v mysqldump &> /dev/null; then
@@ -718,7 +739,7 @@ marzban_next_template() {
             return 1
         fi
         BACKUP_DB_COMMAND="mysqldump -h $db_host -P $db_port -u $db_user -p'$db_password' '$db_name' > $DB_PATH"
-        DIRECTORIES+=($DB_PATH)
+        DIRECTORIES+=("$DB_PATH")
     fi
 
     # Export backup variables
