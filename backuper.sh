@@ -259,10 +259,11 @@ generate_template() {
     print "5) Marzneshin Logs"
     print "6) Marzban"
     print "7) Marzban Logs"
-    print "8) MirzaBot"
-    print "9) WalBot"
-    print "10) HolderBot"
-    print "11) MarzHelp + Marzban"
+    print "8) Marzban Next"
+    print "9) MirzaBot"
+    print "10) WalBot"
+    print "11) HolderBot"
+    print "12) MarzHelp + Marzban"
     print "0) Custom"
     print ""
     while true; do
@@ -297,18 +298,22 @@ generate_template() {
                 break
                 ;;
             8)
-                mirzabot_template
+                marzban_next_template
                 break
                 ;;
             9)
-                walbot_template
+                mirzabot_template
                 break
                 ;;
             10)
-                holderbot_template
+                walbot_template
                 break
                 ;;
             11)
+                holderbot_template
+                break
+                ;;
+            12)
                 marzhelp_template
                 break
                 ;;
@@ -592,6 +597,110 @@ marzban_logs_template() {
     # Export backup variables
     BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
     log "marzban logs backup completed successfully."
+    confirm
+}
+
+marzban_next_template() {
+    log "Checking Marzban Next environment file..."
+    local env_file="/opt/marzban/.env"
+
+    [[ -f "$env_file" ]] || { error "Environment file not found: $env_file"; return 1; }
+
+    local db_type db_name db_user db_password db_host db_port
+    DIRECTORIES=()
+
+    # Extract SQLALCHEMY_DATABASE_URL from .env file
+    local SQLALCHEMY_DATABASE_URL=$(grep -v '^#' "$env_file" | grep 'SQLALCHEMY_DATABASE_URL' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+
+    if [[ -z "$SQLALCHEMY_DATABASE_URL" || "$SQLALCHEMY_DATABASE_URL" == *"sqlite+aiosqlite"* ]]; then
+        db_type="sqlite"
+        db_name=""
+        db_user=""
+        db_password=""
+        db_host=""
+        db_port=""
+        log "SQLite database detected for Marzban Next"
+    elif [[ "$SQLALCHEMY_DATABASE_URL" == *"postgresql+asyncpg"* ]]; then
+        # Parse PostgreSQL URL: postgresql+asyncpg://user:password@host:port/database
+        if [[ "$SQLALCHEMY_DATABASE_URL" =~ ^postgresql\+asyncpg://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+            db_type="postgresql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="${BASH_REMATCH[4]}"
+            db_name="${BASH_REMATCH[5]}"
+        elif [[ "$SQLALCHEMY_DATABASE_URL" =~ ^postgresql\+asyncpg://([^:]+):([^@]+)@([^/]+)/(.+)$ ]]; then
+            db_type="postgresql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="5432"  # Default PostgreSQL port
+            db_name="${BASH_REMATCH[4]}"
+        else
+            error "Invalid PostgreSQL SQLALCHEMY_DATABASE_URL format in $env_file."
+            return 1
+        fi
+        log "PostgreSQL database detected for Marzban Next"
+    elif [[ "$SQLALCHEMY_DATABASE_URL" == *"mysql+asyncmy"* ]]; then
+        # Parse MySQL URL: mysql+asyncmy://user:password@host:port/database
+        if [[ "$SQLALCHEMY_DATABASE_URL" =~ ^mysql\+asyncmy://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+            db_type="mysql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="${BASH_REMATCH[4]}"
+            db_name="${BASH_REMATCH[5]}"
+        elif [[ "$SQLALCHEMY_DATABASE_URL" =~ ^mysql\+asyncmy://([^:]+):([^@]+)@([^/]+)/(.+)$ ]]; then
+            db_type="mysql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="3306"  # Default MySQL port
+            db_name="${BASH_REMATCH[4]}"
+        else
+            error "Invalid MySQL SQLALCHEMY_DATABASE_URL format in $env_file."
+            return 1
+        fi
+        log "MySQL database detected for Marzban Next"
+    else
+        error "Unsupported database type in SQLALCHEMY_DATABASE_URL. Marzban Next supports sqlite+aiosqlite, postgresql+asyncpg, or mysql+asyncmy."
+        return 1
+    fi
+
+    # Add directories to backup
+    add_directories "/opt/marzban"
+    add_directories "/var/lib/marzban"
+    
+    success "Database type: $db_type"
+    success "Database user: $db_user"
+    success "Database password: $db_password"
+    success "Database host: $db_host"
+    success "Database port: $db_port"
+    success "Database name: $db_name"
+
+    local DB_PATH="/root/_${REMARK}${DATABASE_SUFFIX}"
+    # Generate backup command for non-SQLite databases
+    if [[ "$db_type" == "postgresql" ]]; then
+        # Check if pg_dump is available
+        if ! command -v pg_dump &> /dev/null; then
+            error "pg_dump command not found. Please install PostgreSQL client tools."
+            return 1
+        fi
+        BACKUP_DB_COMMAND="PGPASSWORD='$db_password' pg_dump -h $db_host -p $db_port -U $db_user -d $db_name > $DB_PATH"
+        DIRECTORIES+=($DB_PATH)
+    elif [[ "$db_type" == "mysql" ]]; then
+        # Check if mysqldump is available
+        if ! command -v mysqldump &> /dev/null; then
+            error "mysqldump command not found. Please install MySQL client tools."
+            return 1
+        fi
+        BACKUP_DB_COMMAND="mysqldump -h $db_host -P $db_port -u $db_user -p'$db_password' '$db_name' > $DB_PATH"
+        DIRECTORIES+=($DB_PATH)
+    fi
+
+    # Export backup variables
+    BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
+    log "Complete Marzban Next"
     confirm
 }
 

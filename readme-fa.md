@@ -33,6 +33,7 @@
 - [x] **Marzneshin Logs**  
 - [x] **Marzban**  
 - [x] **Marzban Logs**  
+- [x] **Marzban Next**
 - [x] **MirzaBot**  
 - [x] **WalBot**  
 - [x] **HolderBot**  
