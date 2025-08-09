@@ -261,7 +261,7 @@ generate_template() {
     print "7) Marzban Logs"
     print "8) Marzban Next"
     print "9) MirzaBot"
-    print "10) WalBot"
+    print "10) Walpanel"
     print "11) HolderBot"
     print "12) MarzHelp + Marzban"
     print "0) Custom"
@@ -306,7 +306,7 @@ generate_template() {
                 break
                 ;;
             10)
-                walbot_template
+                walpanel_template
                 break
                 ;;
             11)
@@ -410,11 +410,11 @@ holderbot_template() {
     confirm
 }
 
-walbot_template() {
-    log "Checking WalBot configuration..."
+walpanel_template() {
+    log "Checking WalPanel configuration..."
     
     # Set default value for WALDB_FOLDER if not set
-    local WALDB_FOLDER="/opt/walbot/"
+    local WALDB_FOLDER="/opt/walpanel/app/data"
 
     # Check if the directory exists
     if [ ! -d "$WALDB_FOLDER" ]; then
@@ -427,7 +427,7 @@ walbot_template() {
 
     # Export backup variables
     BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
-    log "Complete WalBot"
+    log "Complete WalPanel"
     confirm
 }
 
