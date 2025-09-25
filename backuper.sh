@@ -323,23 +323,6 @@ generate_template() {
                 break
                 ;;
             0)
-            9)
-                mirzabot_template
-                break
-                ;;
-            10)
-                walbot_template
-                break
-                ;;
-            11)
-                holderbot_template
-                break
-                ;;
-            12)
-                marzhelp_template
-                break
-                ;;
-            0)
                 break
                 ;;
             *)
