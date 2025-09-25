@@ -260,10 +260,11 @@ generate_template() {
     print "6) Marzban"
     print "7) Marzban Logs"
     print "8) Marzban Next"
-    print "9) MirzaBot"
-    print "10) Walpanel"
-    print "11) HolderBot"
-    print "12) MarzHelp + Marzban"
+    print "9) PasarGuard"
+    print "10) MirzaBot"
+    print "11) Walpanel"
+    print "12) HolderBot"
+    print "13) MarzHelp + Marzban"
     print "0) Custom"
     print ""
     while true; do
@@ -302,11 +303,32 @@ generate_template() {
                 break
                 ;;
             9)
+                pasarguard_template
+                break
+                ;;
+            10)
+                mirzabot_template
+                break
+                ;;
+            11)
+                walpanel_template
+                break
+                ;;
+            12)
+                holderbot_template
+                break
+                ;;
+            13)
+                marzhelp_template
+                break
+                ;;
+            0)
+            9)
                 mirzabot_template
                 break
                 ;;
             10)
-                walpanel_template
+                walbot_template
                 break
                 ;;
             11)
@@ -410,11 +432,11 @@ holderbot_template() {
     confirm
 }
 
-walpanel_template() {
-    log "Checking WalPanel configuration..."
+walbot_template() {
+    log "Checking WalBot configuration..."
     
     # Set default value for WALDB_FOLDER if not set
-    local WALDB_FOLDER="/opt/walpanel/app/data"
+    local WALDB_FOLDER="/opt/walbot/"
 
     # Check if the directory exists
     if [ ! -d "$WALDB_FOLDER" ]; then
@@ -427,7 +449,7 @@ walpanel_template() {
 
     # Export backup variables
     BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
-    log "Complete WalPanel"
+    log "Complete WalBot"
     confirm
 }
 
@@ -745,6 +767,154 @@ marzban_next_template() {
     # Export backup variables
     BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
     log "Complete Marzban Next"
+    confirm
+}
+
+pasarguard_template() {
+    log "Checking PasarGuard environment file..."
+    local env_file="/opt/pasarguard/.env"
+
+    [[ -f "$env_file" ]] || { error "Environment file not found: $env_file"; return 1; }
+
+    local db_type db_name db_user db_password db_host db_port
+    DIRECTORIES=()
+
+    # Extract SQLALCHEMY_DATABASE_URL from .env file
+    local SQLALCHEMY_DATABASE_URL=$(grep -v '^#' "$env_file" | grep 'SQLALCHEMY_DATABASE_URL' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+
+    if [[ -z "$SQLALCHEMY_DATABASE_URL" || "$SQLALCHEMY_DATABASE_URL" == *"sqlite+aiosqlite"* ]]; then
+        db_type="sqlite"
+        db_name=""
+        db_user=""
+        db_password=""
+        db_host=""
+        db_port=""
+        log "SQLite database detected for PasarGuard"
+    elif [[ "$SQLALCHEMY_DATABASE_URL" == *"postgresql+asyncpg"* ]]; then
+        # Parse PostgreSQL URL: postgresql+asyncpg://user:password@host:port/database
+        if [[ "$SQLALCHEMY_DATABASE_URL" =~ ^postgresql\+asyncpg://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+            db_type="postgresql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="${BASH_REMATCH[4]}"
+            db_name="${BASH_REMATCH[5]}"
+        elif [[ "$SQLALCHEMY_DATABASE_URL" =~ ^postgresql\+asyncpg://([^:]+):([^@]+)@([^/]+)/(.+)$ ]]; then
+            db_type="postgresql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="5432"  # Default PostgreSQL port
+            db_name="${BASH_REMATCH[4]}"
+        else
+            error "Invalid PostgreSQL SQLALCHEMY_DATABASE_URL format in $env_file."
+            return 1
+        fi
+        
+        # Check for individual PostgreSQL environment variables and use them if available
+        local DB_NAME_ENV=$(grep -v '^#' "$env_file" | grep '^DB_NAME' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_USER_ENV=$(grep -v '^#' "$env_file" | grep '^DB_USER' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_PASSWORD_ENV=$(grep -v '^#' "$env_file" | grep '^DB_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local DB_PORT_ENV=$(grep -v '^#' "$env_file" | grep '^DB_PORT' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        
+        # Use individual PostgreSQL variables if they exist, otherwise keep parsed values
+        if [[ -n "$DB_NAME_ENV" ]]; then
+            db_name="$DB_NAME_ENV"
+        fi
+        if [[ -n "$DB_USER_ENV" ]]; then
+            db_user="$DB_USER_ENV"
+        fi
+        if [[ -n "$DB_PASSWORD_ENV" ]]; then
+            db_password="$DB_PASSWORD_ENV"
+        fi
+        if [[ -n "$DB_PORT_ENV" ]]; then
+            db_port="$DB_PORT_ENV"
+        fi
+        
+        log "PostgreSQL database detected for PasarGuard"
+    elif [[ "$SQLALCHEMY_DATABASE_URL" == *"mysql+asyncmy"* ]]; then
+        # Parse MySQL URL: mysql+asyncmy://user:password@host:port/database
+        if [[ "$SQLALCHEMY_DATABASE_URL" =~ ^mysql\+asyncmy://([^:]+):([^@]+)@([^:]+):([0-9]+)/(.+)$ ]]; then
+            db_type="mysql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="${BASH_REMATCH[4]}"
+            db_name="${BASH_REMATCH[5]}"
+        elif [[ "$SQLALCHEMY_DATABASE_URL" =~ ^mysql\+asyncmy://([^:]+):([^@]+)@([^/]+)/(.+)$ ]]; then
+            db_type="mysql"
+            db_user="${BASH_REMATCH[1]}"
+            db_password="${BASH_REMATCH[2]}"
+            db_host="${BASH_REMATCH[3]}"
+            db_port="3306"  # Default MySQL port
+            db_name="${BASH_REMATCH[4]}"
+        else
+            error "Invalid MySQL SQLALCHEMY_DATABASE_URL format in $env_file."
+            return 1
+        fi
+        
+        # Check for individual MySQL environment variables and use them if available
+        local MYSQL_ROOT_PASSWORD=$(grep -v '^#' "$env_file" | grep 'MYSQL_ROOT_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_DATABASE=$(grep -v '^#' "$env_file" | grep 'MYSQL_DATABASE' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_USER=$(grep -v '^#' "$env_file" | grep 'MYSQL_USER' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        local MYSQL_PASSWORD=$(grep -v '^#' "$env_file" | grep 'MYSQL_PASSWORD' | awk -F '=' '{print $2}' | tr -d ' ' | tr -d '"' | tr -d "'")
+        
+        # Use individual MySQL variables if they exist, otherwise keep parsed values
+        if [[ -n "$MYSQL_DATABASE" ]]; then
+            db_name="$MYSQL_DATABASE"
+        fi
+        if [[ -n "$MYSQL_USER" ]]; then
+            db_user="$MYSQL_USER"
+        fi
+        if [[ -n "$MYSQL_PASSWORD" ]]; then
+            db_password="$MYSQL_PASSWORD"
+        fi
+        if [[ -n "$MYSQL_ROOT_PASSWORD" ]]; then
+            # If root password is available, use root user for backup
+            db_user="root"
+            db_password="$MYSQL_ROOT_PASSWORD"
+        fi
+        
+        log "MySQL database detected for PasarGuard"
+    else
+        error "Unsupported database type in SQLALCHEMY_DATABASE_URL. PasarGuard supports sqlite+aiosqlite, postgresql+asyncpg, or mysql+asyncmy."
+        return 1
+    fi
+
+    # Add directories to backup
+    add_directories "/opt/pasarguard"
+    add_directories "/var/lib/pasarguard"
+    
+    success "Database type: $db_type"
+    success "Database user: $db_user"
+    success "Database password: $db_password"
+    success "Database host: $db_host"
+    success "Database port: $db_port"
+    success "Database name: $db_name"
+
+    local DB_PATH="/root/_${REMARK}${DATABASE_SUFFIX}"
+    # Generate backup command for non-SQLite databases
+    if [[ "$db_type" == "postgresql" ]]; then
+        # Check if pg_dump is available
+        if ! command -v pg_dump &> /dev/null; then
+            error "pg_dump command not found. Please install PostgreSQL client tools."
+            return 1
+        fi
+        BACKUP_DB_COMMAND="PGPASSWORD='$db_password' pg_dump -h $db_host -p $db_port -U $db_user -d $db_name > $DB_PATH"
+        DIRECTORIES+=($DB_PATH)
+    elif [[ "$db_type" == "mysql" ]]; then
+        # Check if mysqldump is available
+        if ! command -v mysqldump &> /dev/null; then
+            error "mysqldump command not found. Please install MySQL client tools."
+            return 1
+        fi
+        BACKUP_DB_COMMAND="mysqldump -h $db_host -P $db_port -u $db_user -p'$db_password' '$db_name' > $DB_PATH"
+        DIRECTORIES+=($DB_PATH)
+    fi
+
+    # Export backup variables
+    BACKUP_DIRECTORIES="${DIRECTORIES[*]}"
+    log "Complete PasarGuard"
     confirm
 }
 
