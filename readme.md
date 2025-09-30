@@ -34,6 +34,7 @@
 - [x] **Marzban**  
 - [x] **Marzban Logs**  
 - [x] **Marzban Next**
+- [x] **PasarGuard**
 - [x] **MirzaBot**  
 - [x] **WalBot**  
 - [x] **HolderBot**
